@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gomaster-{{ .Release.Name }}-deployment
+  labels:
+    helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- range $k, $v :=  .Values.global.appSelector | required "appSelector required" }}
+      {{ $k }}: {{ tpl $v $ }}
+      {{- end }}  
+  template:
+    metadata:
+      labels:
+        {{- range $k, $v :=  .Values.global.appSelector | required "appSelector required" }}
+        {{ $k }}: {{ tpl $v $ }}
+        {{- end }}  
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: gomaster
+          image: "{{ .Values.imageName | required "imageName required" }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http

@@ -1,13 +1,22 @@
 # GOMASTER
 
+- Git: https://github.com/alanapz/go-mastermind
+- Docker: https://hub.docker.com/repository/docker/alanmpinder/gomaster/general
+
 Test Go application, used to test the following technologies:
 
 - Basic Go REST API (using Gin framework)
 - Front-end using Knockout
-- Testing building single static images
+- Testing statically-compiled application with a `FROM scratch` image
+- Testing Helm subchart handling
 
+
+### Testing statically-compiled application
 
 Image is statically built: Only 1 binary and assets (CSS/HTML).
+(We use `from scratch` to force no base image).
+
+To compile: `CGO_ENABLED=0 go build -ldflags="-extldflags=-static"`
 
 In Dive:
 
@@ -22,6 +31,18 @@ drwxr-xr-x         0:0      11 kB      ├── assets
 
 For a total image size of 11MB.
 
+### [Testing Helm subchart organisation](https://helm.sh/docs/chart_template_guide/subcharts_and_globals/)
+
+The parent chart (gomaster) is completely empty, with no templates.
+
+- `gomaster-deployment` subchart stores deployment.yaml
+- `gomaster-service` subchart stores service.yaml
+
+
+All settings are stored in values.yaml of parent chart.
+
+See `chart\gomaster\values.yaml` for more details.
+
 # To Run
 
 Via Docker:
@@ -32,6 +53,17 @@ $ docker run --init -p 8080:8080 docker.io/alanmpinder/gomaster
 
 Then visit http://localhost:8080 in your browser.
 
+
+Via K8S:
+
+(Assuming cluster is setup and kubeconfig available)
+
+```
+$ helm install release1 chart\gomaster -n gomaster --create-namespace
+kubectl port-forward -n gomaster service/gomaster-release1-service 8080:http
+```
+
+Then visit http://localhost:8080 in your browser.
 
 # To Build (Docker)
 
